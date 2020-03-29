@@ -33,6 +33,16 @@ header p {
   font-size: 2rem;
 }
 
+/*there was no declaration for main or section like instructions said in 4.3.4
+main {
+  display: flex;
+  margin-bottom: 60px;
+}
+
+section {
+  flex: 1;
+*/
+
 p,
 li {
   font-size: 1.6rem;
