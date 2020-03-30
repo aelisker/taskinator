@@ -24,7 +24,13 @@ var taskFormHandler = function(event) {
     //has fata attribute, so get task id and call function
     if (isEdit) {
         var taskId = formEl.getAttribute("data-task-id");
-        completeEditTask(taskNameInput, taskTypeInput, taskId);
+        if (!taskNameInput || !taskTypeInput) {
+            alert("You need to fill out the task form!");
+            return false;
+        }
+        else{
+            completeEditTask(taskNameInput, taskTypeInput, taskId);
+        }     
     }
     //no data attribute, so create object as normal and pass to createTaskEl function
     else {
@@ -32,18 +38,15 @@ var taskFormHandler = function(event) {
             name: taskNameInput,
             type: taskTypeInput
         };
-        createTaskEl(taskDataObj);
+        if (!taskNameInput || !taskTypeInput) {
+            alert("You need to fill out the task form!");
+            return false;
+        }
+        else {
+            createTaskEl(taskDataObj);
+        }  
     }
-    
-    // if (!taskNameInput || !taskTypeInput) {
-    //     alert("You need to fill out the task form!");
-    //     return false;
-    // }
-
-    // formEl.reset();
-
-    // //sent it as arguement to createTaskEl
-    // createTaskEl(taskDataObj);
+    formEl.reset();
 };   
 
 var completeEditTask = function(taskName, taskType, taskId) {
@@ -58,6 +61,7 @@ var completeEditTask = function(taskName, taskType, taskId) {
 
     alert("Task Updated!");
 
+    //remove task ID so form is clear
     formEl.removeAttribute("data-task-id");
     document.querySelector("#save-task").textContent = "Add Task";
 };
@@ -69,6 +73,7 @@ var createTaskEl = function(taskDataObj) {
 
     //add task id as custom attribute
     listItemEl.setAttribute("data-task-id", taskIdCounter);
+    listItemEl.setAttribute("draggable", "true");
 
     // create div to hold task info and add to list item
     var taskInfoEl = document.createElement("div");
@@ -171,6 +176,60 @@ var taskStatusChangeHandler = function(event) {
     }
 };
 
+var dragTaskHandler = function(event) {
+    // console.log("event.target:", event.target);
+    // console.log("event.type:", event.type);
+    // console.log("event", event);
+
+    var taskId = event.target.getAttribute("data-task-id");
+    console.log("Task ID", taskId);
+
+    event.dataTransfer.setData("text/plain", taskId);
+
+    // var getId = event.dataTransfer.getData("text/plain");
+    // console.log("getId", getId, typeof getId);
+};
+
+var dropZoneDragHandler = function(event) {
+    //console.log("Dragover Event Target", event.target);
+
+    var taskListEl = event.target.closest(".task-list");
+    if (taskListEl) {
+        event.preventDefault();
+    }
+};
+
+var dropTaskHandler = function(event) {
+    var id = event.dataTransfer.getData("text/plain");
+    // console.log("drop event", event.target, event.dataTransfer, id);
+
+    var draggableElement = document.querySelector("[data-task-id='" + id +"']");
+    // console.log(draggableElement);
+    // console.dir(draggableElement);
+
+    var dropZoneEl = event.target.closest(".task-list");
+    var statusType = dropZoneEl.id;
+    // console.log(statusType);
+    // console.dir(dropZoneEl);
+
+    //set status of task based on dropZone id
+    var statusSelectEl = draggableElement.querySelector("select[name='status-change']");
+    // console.dir(statusSelectEl);
+    // console.log(statusSelectEl);
+
+    if (statusType === "tasks-to-do") {
+        statusSelectEl.selectedIndex = 0;
+    }
+    else if (statusType === "tasks-in-progress") {
+        statusSelectEl.selectedIndex = 1;
+    }
+    else if (statusType === "tasks-completed") {
+        statusSelectEl.selectedIndex = 2;
+    }
+
+    dropZoneEl.appendChild(draggableElement);
+};
+
 var deleteTask = function(taskId) {
     var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
     taskSelected.remove();
@@ -194,10 +253,17 @@ var editTask = function(taskId) {
 
     document.querySelector("#save-task").textContent = "Save Task";
 
+    //give from task ID so we can later check if it is being edited
     formEl.setAttribute("data-task-id", taskId);
 };
     
 formEl.addEventListener("submit", taskFormHandler);
+
+pageContentEl.addEventListener("dragstart", dragTaskHandler);
+
+pageContentEl.addEventListener("dragover", dropZoneDragHandler);
+
+pageContentEl.addEventListener("drop", dropTaskHandler);
 
 pageContentEl.addEventListener("change", taskStatusChangeHandler);
 
